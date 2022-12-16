@@ -20,7 +20,6 @@ class App:
         if random() < 0.3:
             self.carrots.append(Carrot())
         self.carrots = [carrot for carrot in self.carrots if carrot.alive]
-        print(len(self.carrots))
 
     def draw(self):
         pyxel.cls(0)
@@ -74,18 +73,10 @@ class Carrot:
 
     def collision(self, rabbit):
         dx = self.x - rabbit.x
-        if dx < 0 and abs(dx) < self.W:
-            pass
-        elif 0 <= dx < rabbit.RUN_W:
-            pass
-        else:
+        if not (dx < 0 and abs(dx) < self.W or 0 <= dx < rabbit.RUN_W):
             return False
         dy = self.y - rabbit.y
-        if dy < 0 and abs(dy) < self.H:
-            pass
-        elif 0 <= dy < rabbit.RUN_H:
-            pass
-        else:
+        if not (dy < 0 and abs(dy) < self.H or 0 <= dy < rabbit.RUN_H):
             return False
         return True
 
