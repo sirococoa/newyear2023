@@ -10,6 +10,8 @@ class App:
     MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
+    GOAL = 3000
+
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
         pyxel.load('./assets/my_resource.pyxres')
@@ -17,12 +19,15 @@ class App:
         self.carrots = []
         self.rocks = []
         self.road = Road()
+        self.progress_bar = ProgressBar()
         self.scroll_speed = self.INIT_SCROLL_SPEED
         self.scroll_speed_count = 0
+        self.progress = 0
         pyxel.run(self.update, self.draw)
 
     def update(self):
         self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
+        self.progress += self.scroll_speed
         self.rabbit.update()
         self.road.update(self.scroll_speed)
         for carrot in self.carrots:
@@ -46,6 +51,7 @@ class App:
         for rock in self.rocks:
             rock.draw()
         self.rabbit.draw()
+        self.progress_bar.draw(self.progress / self.GOAL)
 
 
 class Rabbit:
@@ -199,5 +205,27 @@ class Road:
     @classmethod
     def lane_to_height(cls, lane):
         return cls.H // 3 + lane * cls.H
+
+
+class ProgressBar:
+    U = 0
+    V = 160
+    W = 96
+    H = 16
+
+    X = (WINDOW_HEIGHT - W) // 2
+    Y = 2
+
+    BAR_U = 5
+    BAR_V = 11
+    BAR_WIDTH = 85
+    BAR_HEIGHT = 4
+    BAR_COLOR = 8
+
+    def draw(self, progress_percent):
+        progress_percent = min(1, max(0, progress_percent))
+        pyxel.blt(self.X, self.Y, 0, self.U, self.V, self.W, self.H, 2)
+        length = int(self.BAR_WIDTH * progress_percent)
+        pyxel.rect(self.X + self.BAR_U, self.Y + self.BAR_V, length, self.BAR_HEIGHT, self.BAR_COLOR)
 
 App()
