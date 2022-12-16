@@ -6,7 +6,8 @@ WINDOW_HEIGHT = 256
 
 
 class App:
-    INIT_SCROLL_SPEED = 1
+    INIT_SCROLL_SPEED = 2
+    MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
     def __init__(self):
@@ -20,7 +21,7 @@ class App:
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        self.scroll_speed = self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE
+        self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
         self.rabbit.update()
         for carrot in self.carrots:
             if carrot.update(self.rabbit, self.scroll_speed):
