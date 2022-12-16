@@ -6,24 +6,31 @@ WINDOW_HEIGHT = 256
 
 
 class App:
+    INIT_SCROLL_SPEED = 1
+    SCROLL_SPEED_RATE = 3
+
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
         pyxel.load('./assets/my_resource.pyxres')
         self.rabbit = Rabbit()
         self.carrots = []
         self.rocks = []
-        self.scroll_speed = 2
+        self.scroll_speed = self.INIT_SCROLL_SPEED
+        self.scroll_speed_count = 0
         pyxel.run(self.update, self.draw)
 
     def update(self):
+        self.scroll_speed = self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE
         self.rabbit.update()
         for carrot in self.carrots:
-            carrot.update(self.rabbit, self.scroll_speed)
+            if carrot.update(self.rabbit, self.scroll_speed):
+                self.scroll_speed_count += 1
         for rock in self.rocks:
-            rock.update(self.rabbit, self.scroll_speed)
-        if random() < 0.3:
+            if rock.update(self.rabbit, self.scroll_speed):
+                self.scroll_speed_count = 0
+        if random() < 0.03 * self.scroll_speed:
             self.carrots.append(Carrot())
-        if random() < 0.1:
+        if random() < 0.01 * self.scroll_speed:
             self.rocks.append(Rock())
         self.carrots = [carrot for carrot in self.carrots if carrot.alive]
         self.rocks = [rock for rock in self.rocks if rock.alive]
@@ -52,29 +59,37 @@ class Rabbit:
     HIT_H = 32
 
     HIT_ANIMATION_TIME = 20
+    MOVE_ANIMATION_TIME = 2
 
     def __init__(self):
         self.x = self.INIT_START_X
         self.y = self.INIT_START_Y
         self.state = 'run'
-        self.count_time = 0
+        self.state_count_time = 0
+        self.move_count_time = 0
 
     def update(self):
-        key_input = 0
-        if pyxel.btn(pyxel.KEY_W):
-            key_input -= 1
-        if pyxel.btn(pyxel.KEY_S):
-            key_input += 1
-        self.y += self.RUN_H * key_input
+        if self.move_count_time == 0:
+            key_input = 0
+            if pyxel.btn(pyxel.KEY_W):
+                key_input -= 1
+            if pyxel.btn(pyxel.KEY_S):
+                key_input += 1
+            self.y += self.RUN_H * key_input
+            if key_input != 0:
+                self.move_count_time = self.MOVE_ANIMATION_TIME
+        else:
+            self.move_count_time -= 1
+
         if self.state == 'hit':
-            self.count_time -= 1
-            if self.count_time == 0:
+            self.state_count_time -= 1
+            if self.state_count_time == 0:
                 self.state = 'run'
 
     def hit(self):
         if self.state == 'run':
             self.state = 'hit'
-            self.count_time = self.HIT_ANIMATION_TIME
+            self.state_count_time = self.HIT_ANIMATION_TIME
 
     def draw(self):
         if self.state == 'run':
@@ -100,6 +115,8 @@ class Carrot:
         self.x -= scroll_speed
         if self.collision(rabbit):
             self.alive = False
+            return True
+        return False
 
     def collision(self, rabbit):
         dx = self.x - rabbit.x
@@ -131,6 +148,8 @@ class Rock:
         self.x -= scroll_speed
         if self.collision(rabbit):
             rabbit.hit()
+            return True
+        return False
 
     def collision(self, rabbit):
         dx = self.x - rabbit.x
