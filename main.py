@@ -1,8 +1,8 @@
 import pyxel
 from random import randint, random
 
-WINDOW_WIDTH = 256
-WINDOW_HEIGHT = 256
+WINDOW_WIDTH = 240
+WINDOW_HEIGHT = 240
 
 
 class App:
@@ -16,6 +16,7 @@ class App:
         self.rabbit = Rabbit()
         self.carrots = []
         self.rocks = []
+        self.road = Road()
         self.scroll_speed = self.INIT_SCROLL_SPEED
         self.scroll_speed_count = 0
         pyxel.run(self.update, self.draw)
@@ -23,6 +24,7 @@ class App:
     def update(self):
         self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
         self.rabbit.update()
+        self.road.update(self.scroll_speed)
         for carrot in self.carrots:
             if carrot.update(self.rabbit, self.scroll_speed):
                 self.scroll_speed_count += 1
@@ -38,6 +40,7 @@ class App:
 
     def draw(self):
         pyxel.cls(0)
+        self.road.draw()
         for carrot in self.carrots:
             carrot.draw()
         for rock in self.rocks:
@@ -94,9 +97,9 @@ class Rabbit:
 
     def draw(self):
         if self.state == 'run':
-            pyxel.blt(self.x, self.y, 0, self.RUN_U, self.RUN_V, self.RUN_W, self.RUN_H, 0)
+            pyxel.blt(self.x, self.y, 0, self.RUN_U, self.RUN_V, self.RUN_W, self.RUN_H, 2)
         elif self.state == 'hit' and pyxel.frame_count % 4 < 3:
-            pyxel.blt(self.x, self.y, 0, self.HIT_U, self.HIT_V, self.HIT_W, self.HIT_H, 0)
+            pyxel.blt(self.x, self.y, 0, self.HIT_U, self.HIT_V, self.HIT_W, self.HIT_H, 2)
 
 
 class Carrot:
@@ -129,7 +132,7 @@ class Carrot:
         return True
 
     def draw(self):
-        pyxel.blt(self.x, self.y, 0, self.U, self.V, self.W, self.H, 0)
+        pyxel.blt(self.x, self.y, 0, self.U, self.V, self.W, self.H, 2)
 
 
 class Rock:
@@ -162,6 +165,29 @@ class Rock:
         return True
 
     def draw(self):
-        pyxel.blt(self.x, self.y, 0, self.U, self.V, self.W, self.H, 0)
+        pyxel.blt(self.x, self.y, 0, self.U, self.V, self.W, self.H, 2)
+
+
+class Road:
+    U = 0
+    V = 112
+    W = 16
+    H = 48
+    ROW = 6
+
+    def __init__(self):
+        self.column = WINDOW_HEIGHT // self.H
+        self.lanes = [randint(0, self.ROW) for _ in range(self.column)]
+        self.scroll = 0
+
+    def update(self, scroll_speed):
+        self.scroll += scroll_speed
+        if self.scroll > self.W * self.ROW:
+            self.scroll -= self.W * self.ROW
+
+    def draw(self):
+        for column, lane in enumerate(self.lanes):
+            for i in range(WINDOW_WIDTH // self.W):
+                pyxel.blt(i * self.W, column * self.H, 0, self.U + (i + column) % self.ROW * self.W, self.V, self.W, self.H, 2)
 
 App()
