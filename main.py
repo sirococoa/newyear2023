@@ -16,7 +16,7 @@ class App:
     def update(self):
         self.rabbit.update()
         for carrot in self.carrots:
-            carrot.update(1)
+            carrot.update(self.rabbit, 1)
         if random() < 0.3:
             self.carrots.append(Carrot())
         self.carrots = [carrot for carrot in self.carrots if carrot.alive]
@@ -65,10 +65,29 @@ class Carrot:
         self.y = randint(0, WINDOW_HEIGHT) // self.H * self.H
         self.alive = True
 
-    def update(self, scroll_speed):
+    def update(self, rabbit, scroll_speed):
         if self.x < -self.W:
             self.alive = False
         self.x -= scroll_speed
+        if self.collision(rabbit):
+            self.alive = False
+
+    def collision(self, rabbit):
+        dx = self.x - rabbit.x
+        if dx < 0 and abs(dx) < self.W:
+            pass
+        elif 0 <= dx < rabbit.RUN_W:
+            pass
+        else:
+            return False
+        dy = self.y - rabbit.y
+        if dy < 0 and abs(dy) < self.H:
+            pass
+        elif 0 <= dy < rabbit.RUN_H:
+            pass
+        else:
+            return False
+        return True
 
     def draw(self):
         pyxel.blt(self.x, self.y, 0, self.U, self.V, self.W, self.H, 0)
