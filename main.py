@@ -50,7 +50,7 @@ class App:
 
 class Rabbit:
     INIT_START_X = 20
-    INIT_START_Y = WINDOW_HEIGHT // 2
+    INIT_LANE = 3
 
     RUN_U = 0
     RUN_V = 16
@@ -67,7 +67,8 @@ class Rabbit:
 
     def __init__(self):
         self.x = self.INIT_START_X
-        self.y = self.INIT_START_Y
+        self.lane = self.INIT_LANE
+        self.y = Road.lane_to_height(self.lane)
         self.state = 'run'
         self.state_count_time = 0
         self.move_count_time = 0
@@ -79,7 +80,9 @@ class Rabbit:
                 key_input -= 1
             if pyxel.btn(pyxel.KEY_S):
                 key_input += 1
-            self.y += self.RUN_H * key_input
+            self.lane += key_input
+            self.lane = min(Road.MAX_LANE, max(0, self.lane))
+            self.y = Road.lane_to_height(self.lane)
             if key_input != 0:
                 self.move_count_time = self.MOVE_ANIMATION_TIME
         else:
@@ -110,7 +113,8 @@ class Carrot:
 
     def __init__(self):
         self.x = WINDOW_WIDTH
-        self.y = randint(0, WINDOW_HEIGHT) // self.H * self.H
+        self.lane = randint(0, Road.MAX_LANE)
+        self.y = Road.lane_to_height(self.lane)
         self.alive = True
 
     def update(self, rabbit, scroll_speed):
@@ -143,7 +147,8 @@ class Rock:
 
     def __init__(self):
         self.x = WINDOW_WIDTH
-        self.y = randint(0, WINDOW_HEIGHT) // self.H * self.H
+        self.lane = randint(0, Road.MAX_LANE)
+        self.y = Road.lane_to_height(self.lane)
         self.alive = True
 
     def update(self, rabbit, scroll_speed):
@@ -174,6 +179,7 @@ class Road:
     W = 16
     H = 48
     ROW = 6
+    MAX_LANE = WINDOW_WIDTH // H - 1
 
     def __init__(self):
         self.column = WINDOW_HEIGHT // self.H
@@ -181,13 +187,17 @@ class Road:
         self.scroll = 0
 
     def update(self, scroll_speed):
-        self.scroll += scroll_speed
+        # self.scroll += scroll_speed
         if self.scroll > self.W * self.ROW:
             self.scroll -= self.W * self.ROW
 
     def draw(self):
         for column, lane in enumerate(self.lanes):
-            for i in range(WINDOW_WIDTH // self.W):
-                pyxel.blt(i * self.W, column * self.H, 0, self.U + (i + column) % self.ROW * self.W, self.V, self.W, self.H, 2)
+            for i in range(WINDOW_WIDTH // (self.W * self.ROW) + 3):
+                pyxel.blt(i * (self.W * self.ROW) - lane * self.W - self.scroll, column * self.H, 0, self.U, self.V, (self.W * self.ROW), self.H, 2)
+
+    @classmethod
+    def lane_to_height(cls, lane):
+        return cls.H // 3 + lane * cls.H
 
 App()
