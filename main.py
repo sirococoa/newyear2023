@@ -336,7 +336,7 @@ class StartScreen:
     Y = WINDOW_HEIGHT // 4 - H // 2
 
     NEWYEAR_TIME = datetime(2023, 1, 1)
-    NEWYEAR_TIME = datetime.now() + timedelta(minutes=1)
+    # NEWYEAR_TIME = datetime.now() + timedelta(minutes=1)
     print(NEWYEAR_TIME)
 
     def __init__(self):
