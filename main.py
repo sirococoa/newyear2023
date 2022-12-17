@@ -23,7 +23,7 @@ class App:
     MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
-    GOAL = 1000
+    GOAL = 10000
 
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
