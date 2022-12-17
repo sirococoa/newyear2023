@@ -41,14 +41,16 @@ class App:
         self.state = 'start'
         self.start_time = datetime.now()
         self.time_display = None
+        self.how_to_play = HowToPlayDisplay('start')
         pyxel.run(self.update, self.draw)
 
     def update(self):
         if self.state == 'start':
             self.rabbit.move_center()
-            if self.start_screen.update():
+            if self.start_screen.update(self.how_to_play):
                 self.state = 'play'
                 self.start_time = datetime.now()
+                self.how_to_play.change_message('run')
                 self.rabbit.move_left()
         elif self.state == 'play':
             self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
@@ -70,9 +72,29 @@ class App:
             if self.progress > self.GOAL:
                 self.state = 'clear'
                 self.time_display = TimeDisplay(datetime.now() - self.start_time)
+                self.how_to_play.change_message('clear')
                 self.rabbit.move_center()
         elif self.state == 'clear':
-            pass
+            if pyxel.btn(pyxel.KEY_B):
+                self.state = 'start'
+                self.how_to_play.change_message('start')
+                self.init_game()
+
+    def init_game(self):
+        self.rabbit = Rabbit()
+        self.carrots = []
+        self.rocks = []
+        self.road = Road()
+        self.progress_bar = ProgressBar()
+        self.start_screen = StartScreen()
+        self.clear_screen = ClearScreen()
+        self.scroll_speed = self.INIT_SCROLL_SPEED
+        self.scroll_speed_count = 0
+        self.progress = 0
+        self.state = 'start'
+        self.start_time = datetime.now()
+        self.time_display = None
+        self.how_to_play = HowToPlayDisplay('start')
 
     def draw(self):
         pyxel.cls(0)
@@ -93,6 +115,7 @@ class App:
             self.clear_screen.draw()
             self.rabbit.draw()
             self.time_display.draw()
+        self.how_to_play.draw()
 
 
 class Rabbit:
@@ -308,13 +331,14 @@ class StartScreen:
         self.selection = 0
         self.state = 'start'
 
-    def update(self):
+    def update(self, how_to_play):
         if self.state == 'start':
             if pyxel.btn(pyxel.KEY_SPACE):
                 if self.selection == 0:
                     return True
                 else:
                     self.state = 'wait'
+                    how_to_play.change_message('clear')
                     return False
             key_input = 0
             if pyxel.btnr(pyxel.KEY_W):
@@ -324,6 +348,9 @@ class StartScreen:
             self.selection += key_input
             self.selection = self.selection % 2
         elif self.state == 'wait':
+            if pyxel.btn(pyxel.KEY_B):
+                how_to_play.change_message('start')
+                self.state = 'start'
             if self.NEWYEAR_TIME <= datetime.now():
                 return True
 
@@ -360,7 +387,7 @@ class TimeDisplay:
         else:
             self.time = str(time.days) + self.time[self.time.find(','):self.time.find('.')]
 
-        print(len(self.time), self.time, time)
+        # print(len(self.time), self.time, time)
         self.x = WINDOW_WIDTH // 2 - len(self.time)*self.W // 2
         self.y = WINDOW_HEIGHT // 4 * 3 - self.H // 2
 
@@ -392,5 +419,27 @@ class TimeDisplay:
                 pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 10, self.V, self.W, self.H, 2)
             else:
                 pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 11, self.V, self.W, self.H, 2)
+
+
+class HowToPlayDisplay:
+    MESSAGE = {
+        'start': ['[W/S]:Move cursor', '[Space]:Select Menu'],
+        'wait': ['[B]:Back to Menu'],
+        'run': ['[W/S]:Move Rabbit'],
+        'clear': ['[B]:Back to Menu']
+    }
+    X = WINDOW_WIDTH // 2
+    Y = WINDOW_WIDTH // 8 * 7
+
+    def __init__(self, message):
+        self.message = message
+
+    def change_message(self, message):
+        self.message = message
+
+    def draw(self):
+        for i, msg in enumerate(self.MESSAGE[self.message]):
+            pyxel.text(self.X + 1, self.Y + 1 + i * 7, msg, 0)
+            pyxel.text(self.X, self.Y + i * 7, msg, 7)
 
 App()
