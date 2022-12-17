@@ -1,8 +1,21 @@
-import pyxel
+from datetime import datetime, timedelta
 from random import randint, random
+
+import pyxel
 
 WINDOW_WIDTH = 240
 WINDOW_HEIGHT = 240
+
+
+def center(text, width):
+    """
+    文章を中央揃えで表示する際のx座標を返す
+    :param text: 座標を得たい文章
+    :param width: 画面の幅
+    :return:
+    """
+    TEXT_W = 4
+    return width // 2 - len(text) * TEXT_W // 2
 
 
 class App:
@@ -31,7 +44,7 @@ class App:
     def update(self):
         if self.state == 'start':
             self.rabbit.move_center()
-            if pyxel.btn(pyxel.KEY_SPACE):
+            if self.start_screen.update():
                 self.state = 'play'
                 self.rabbit.move_left()
         elif self.state == 'play':
@@ -282,7 +295,97 @@ class StartScreen:
     X = (WINDOW_HEIGHT - W) // 2
     Y = WINDOW_HEIGHT // 4 - H // 2
 
+    NEWYEAR_TIME = datetime(2023, 1, 1)
+    NEWYEAR_TIME = datetime.now() + timedelta(minutes=1)
+    print(NEWYEAR_TIME)
+
+    def __init__(self):
+        self.selection = 0
+        self.state = 'start'
+
+    def update(self):
+        if self.state == 'start':
+            if pyxel.btn(pyxel.KEY_SPACE):
+                if self.selection == 0:
+                    return True
+                else:
+                    self.state = 'wait'
+                    return False
+            key_input = 0
+            if pyxel.btnr(pyxel.KEY_W):
+                key_input -= 1
+            if pyxel.btnr(pyxel.KEY_S):
+                key_input += 1
+            self.selection += key_input
+            self.selection = self.selection % 2
+        elif self.state == 'wait':
+            if self.NEWYEAR_TIME <= datetime.now():
+                return True
+
     def draw(self):
         pyxel.blt(self.X, self.Y, 0, self.U, self.V, self.W, self.H, 2)
+        if self.state == 'start':
+            msg = 'Play Normal Run Mode'
+            pyxel.text(center(msg, WINDOW_WIDTH) + 1, WINDOW_HEIGHT // 4 * 3 + 1, msg, 0)
+            pyxel.text(center(msg, WINDOW_WIDTH), WINDOW_HEIGHT // 4 * 3, msg, 7)
+            if self.selection == 0:
+                pyxel.text(center(msg, WINDOW_WIDTH) - 15, WINDOW_HEIGHT // 4 * 3, '>>>', 9)
+                pyxel.text(center(msg, WINDOW_WIDTH) - 14, WINDOW_HEIGHT // 4 * 3, '>>>', 9)
+            msg = 'Play Happy New Year Run Mode'
+            pyxel.text(center(msg, WINDOW_WIDTH) + 1, WINDOW_HEIGHT // 4 * 3 + 11, msg, 0)
+            pyxel.text(center(msg, WINDOW_WIDTH), WINDOW_HEIGHT // 4 * 3 + 10, msg, 7)
+            if self.selection == 1:
+                pyxel.text(center(msg, WINDOW_WIDTH) - 15, WINDOW_HEIGHT // 4 * 3 + 10, '>>>', 9)
+                pyxel.text(center(msg, WINDOW_WIDTH) - 14, WINDOW_HEIGHT // 4 * 3 + 10, '>>>', 9)
+        elif self.state == 'wait':
+            time = TimeDisplay(WINDOW_HEIGHT // 4 * 3, self.NEWYEAR_TIME - datetime.now())
+            time.draw()
+
+
+class TimeDisplay:
+    U = 16
+    V = 224
+    W = 16
+    H = 32
+
+    def __init__(self, y, time):
+        self.time = str(time)
+        if time.days == 0:
+            self.time = self.time[:self.time.find('.')]
+        else:
+            self.time = str(time.days) + self.time[self.time.find(','):self.time.find('.')]
+
+        print(len(self.time), self.time, time)
+        self.x = WINDOW_WIDTH // 2 - len(self.time)*self.W // 2
+        self.y = y - self.H // 2
+
+    def draw(self):
+        pyxel.blt(self.x - self.W, self.y, 0, self.U - self.W, self.V, self.W, self.H, 2)
+        pyxel.blt(self.x + len(self.time) * self.W, self.y, 0, self.U + 12 * self.W, self.V, self.W, self.H, 2)
+        for i, c in enumerate(self.time):
+            if c == '0':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U, self.V, self.W, self.H, 2)
+            elif c == '1':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W, self.V, self.W, self.H, 2)
+            elif c == '2':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 2, self.V, self.W, self.H, 2)
+            elif c == '3':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 3, self.V, self.W, self.H, 2)
+            elif c == '4':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 4, self.V, self.W, self.H, 2)
+            elif c == '5':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 5, self.V, self.W, self.H, 2)
+            elif c == '6':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 6, self.V, self.W, self.H, 2)
+            elif c == '7':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 7, self.V, self.W, self.H, 2)
+            elif c == '8':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 8, self.V, self.W, self.H, 2)
+            elif c == '9':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 9, self.V, self.W, self.H, 2)
+            elif c == ':':
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 10, self.V, self.W, self.H, 2)
+            else:
+                pyxel.blt(self.x + i * self.W, self.y, 0, self.U + self.W * 11, self.V, self.W, self.H, 2)
 
 App()
