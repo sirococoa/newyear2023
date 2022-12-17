@@ -20,15 +20,21 @@ class App:
         self.rocks = []
         self.road = Road()
         self.progress_bar = ProgressBar()
+        self.start_screen = StartScreen()
         self.clear_screen = ClearScreen()
         self.scroll_speed = self.INIT_SCROLL_SPEED
         self.scroll_speed_count = 0
         self.progress = 0
-        self.state = 'play'
+        self.state = 'start'
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        if self.state == 'play':
+        if self.state == 'start':
+            self.rabbit.move_center()
+            if pyxel.btn(pyxel.KEY_SPACE):
+                self.state = 'play'
+                self.rabbit.move_left()
+        elif self.state == 'play':
             self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
             self.progress += self.scroll_speed
             self.rabbit.update()
@@ -53,7 +59,11 @@ class App:
 
     def draw(self):
         pyxel.cls(0)
-        if self.state == 'play':
+        if self.state == 'start':
+            self.road.draw()
+            self.start_screen.draw()
+            self.rabbit.draw()
+        elif self.state == 'play':
             self.road.draw()
             for carrot in self.carrots:
                 carrot.draw()
@@ -120,6 +130,10 @@ class Rabbit:
     def move_center(self):
         self.x = WINDOW_WIDTH // 2 - self.RUN_W // 2
         self.y = WINDOW_HEIGHT // 2 - self.RUN_H // 2
+
+    def move_left(self):
+        self.x = self.INIT_START_X
+        self.y = Road.lane_to_height(self.lane)
 
     def draw(self):
         if self.state == 'run':
@@ -248,6 +262,19 @@ class ProgressBar:
 
 class ClearScreen:
     U = 0
+    V = 176
+    W = 128
+    H = 48
+
+    X = (WINDOW_HEIGHT - W) // 2
+    Y = WINDOW_HEIGHT // 4 - H // 2
+
+    def draw(self):
+        pyxel.blt(self.X, self.Y, 0, self.U, self.V, self.W, self.H, 2)
+
+
+class StartScreen:
+    U = 128
     V = 176
     W = 128
     H = 48
