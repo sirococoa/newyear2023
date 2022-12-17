@@ -23,7 +23,7 @@ class App:
     MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
-    GOAL = 100
+    GOAL = 10000
 
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -39,6 +39,8 @@ class App:
         self.scroll_speed_count = 0
         self.progress = 0
         self.state = 'start'
+        self.start_time = datetime.now()
+        self.time_display = None
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -46,6 +48,7 @@ class App:
             self.rabbit.move_center()
             if self.start_screen.update():
                 self.state = 'play'
+                self.start_time = datetime.now()
                 self.rabbit.move_left()
         elif self.state == 'play':
             self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
@@ -66,6 +69,7 @@ class App:
             self.rocks = [rock for rock in self.rocks if rock.alive]
             if self.progress > self.GOAL:
                 self.state = 'clear'
+                self.time_display = TimeDisplay(datetime.now() - self.start_time)
                 self.rabbit.move_center()
         elif self.state == 'clear':
             pass
@@ -88,6 +92,7 @@ class App:
             self.road.draw()
             self.clear_screen.draw()
             self.rabbit.draw()
+            self.time_display.draw()
 
 
 class Rabbit:
@@ -338,7 +343,7 @@ class StartScreen:
                 pyxel.text(center(msg, WINDOW_WIDTH) - 15, WINDOW_HEIGHT // 4 * 3 + 10, '>>>', 9)
                 pyxel.text(center(msg, WINDOW_WIDTH) - 14, WINDOW_HEIGHT // 4 * 3 + 10, '>>>', 9)
         elif self.state == 'wait':
-            time = TimeDisplay(WINDOW_HEIGHT // 4 * 3, self.NEWYEAR_TIME - datetime.now())
+            time = TimeDisplay(self.NEWYEAR_TIME - datetime.now())
             time.draw()
 
 
@@ -348,7 +353,7 @@ class TimeDisplay:
     W = 16
     H = 32
 
-    def __init__(self, y, time):
+    def __init__(self, time):
         self.time = str(time)
         if time.days == 0:
             self.time = self.time[:self.time.find('.')]
@@ -357,7 +362,7 @@ class TimeDisplay:
 
         print(len(self.time), self.time, time)
         self.x = WINDOW_WIDTH // 2 - len(self.time)*self.W // 2
-        self.y = y - self.H // 2
+        self.y = WINDOW_HEIGHT // 4 * 3 - self.H // 2
 
     def draw(self):
         pyxel.blt(self.x - self.W, self.y, 0, self.U - self.W, self.V, self.W, self.H, 2)
