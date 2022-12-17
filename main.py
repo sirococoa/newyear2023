@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from random import randint, random
+from random import randint, random, choice
 
 import pyxel
 
@@ -23,7 +23,7 @@ class App:
     MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
-    GOAL = 10000
+    GOAL = 1000
 
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -42,6 +42,7 @@ class App:
         self.start_time = datetime.now()
         self.time_display = None
         self.how_to_play = HowToPlayDisplay('start')
+        self.effects = []
         pyxel.run(self.update, self.draw)
 
     def update(self):
@@ -75,10 +76,14 @@ class App:
                 self.how_to_play.change_message('clear')
                 self.rabbit.move_center()
         elif self.state == 'clear':
+            self.effects.append(Effect.create_random())
             if pyxel.btn(pyxel.KEY_B):
                 self.state = 'start'
                 self.how_to_play.change_message('start')
                 self.init_game()
+        for effect in self.effects:
+            effect.update()
+        self.effects = [effect for effect in self.effects if effect.alive]
 
     def init_game(self):
         self.rabbit = Rabbit()
@@ -116,6 +121,8 @@ class App:
             self.rabbit.draw()
             self.time_display.draw()
         self.how_to_play.draw()
+        for effect in self.effects:
+            effect.draw()
 
 
 class Rabbit:
@@ -446,5 +453,58 @@ class HowToPlayDisplay:
         for i, msg in enumerate(self.MESSAGE[self.message]):
             pyxel.text(self.X + 1, self.Y + 1 + i * 7, msg, 0)
             pyxel.text(self.X, self.Y + i * 7, msg, 7)
+
+
+class Effect:
+    def __init__(self, shape, time, x, y, vx, vy, size, color):
+        self.shape = shape
+        self.time = time
+        self.x = x
+        self.y = y
+        self.vx = vx
+        self.vy = vy
+        self.size = size
+        self.color = color
+        self.alive = True
+
+    def update(self):
+        self.x += self.vx
+        self.y += self.vy
+        self.time -= 1
+        if self.time < 0:
+            self.alive = False
+
+    def draw(self):
+        if self.shape == 0:
+            pyxel.rect(self.x, self.y, self.size, self.size, self.color)
+        if self.shape == 1:
+            pyxel.circ(self.x, self.y, self.size, self.color)
+        if self.shape == 2:
+            x1 = self.x + randint(-self.size, self.size)
+            x2 = self.x + randint(-self.size, self.size)
+            y1 = self.y + randint(-self.size, self.size)
+            y2 = self.y + randint(-self.size, self.size)
+            pyxel.tri(self.x, self.y, x1, y1, x2, y2, self.color)
+
+    @classmethod
+    def create_random(cls, shape=None, time=None, x=None, y=None, vx=None, vy=None, size=None, color=None):
+        if shape is None:
+            shape = randint(0, 2)
+        if time is None:
+            time = randint(10, 30)
+        if x is None:
+            x = randint(0, WINDOW_WIDTH)
+        if y is None:
+            y = randint(0, WINDOW_WIDTH)
+        if vx is None:
+            vx = randint(-5, 5)
+        if vy is None:
+            vy = randint(-5, 5)
+        if size is None:
+            size = randint(1, 10)
+        if color is None:
+            color = choice([1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15])
+        return Effect(shape, time, x, y, vx, vy, size, color)
+
 
 App()
