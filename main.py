@@ -147,8 +147,10 @@ class Rabbit:
         if self.move_count_time == 0:
             key_input = 0
             if pyxel.btn(pyxel.KEY_W):
+                pyxel.play(0, 1)
                 key_input -= 1
             if pyxel.btn(pyxel.KEY_S):
+                pyxel.play(0, 2)
                 key_input += 1
             self.lane += key_input
             self.lane = min(Road.MAX_LANE, max(0, self.lane))
@@ -165,6 +167,8 @@ class Rabbit:
 
     def hit(self):
         if self.state == 'run':
+            pyxel.play(0, 3)
+            pyxel.play(1, 4)
             self.state = 'hit'
             self.state_count_time = self.HIT_ANIMATION_TIME
 
@@ -201,6 +205,7 @@ class Carrot:
         self.x -= scroll_speed
         if self.collision(rabbit):
             self.alive = False
+            pyxel.play(0, 0)
             return True
         return False
 
