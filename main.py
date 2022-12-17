@@ -10,7 +10,7 @@ class App:
     MAX_SCROLL_SPEED = 5
     SCROLL_SPEED_RATE = 3
 
-    GOAL = 3000
+    GOAL = 100
 
     def __init__(self):
         pyxel.init(WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -20,38 +20,51 @@ class App:
         self.rocks = []
         self.road = Road()
         self.progress_bar = ProgressBar()
+        self.clear_screen = ClearScreen()
         self.scroll_speed = self.INIT_SCROLL_SPEED
         self.scroll_speed_count = 0
         self.progress = 0
+        self.state = 'play'
         pyxel.run(self.update, self.draw)
 
     def update(self):
-        self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
-        self.progress += self.scroll_speed
-        self.rabbit.update()
-        self.road.update(self.scroll_speed)
-        for carrot in self.carrots:
-            if carrot.update(self.rabbit, self.scroll_speed):
-                self.scroll_speed_count += 1
-        for rock in self.rocks:
-            if rock.update(self.rabbit, self.scroll_speed):
-                self.scroll_speed_count = 0
-        if random() < 0.03 * self.scroll_speed:
-            self.carrots.append(Carrot())
-        if random() < 0.01 * self.scroll_speed:
-            self.rocks.append(Rock())
-        self.carrots = [carrot for carrot in self.carrots if carrot.alive]
-        self.rocks = [rock for rock in self.rocks if rock.alive]
+        if self.state == 'play':
+            self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
+            self.progress += self.scroll_speed
+            self.rabbit.update()
+            self.road.update(self.scroll_speed)
+            for carrot in self.carrots:
+                if carrot.update(self.rabbit, self.scroll_speed):
+                    self.scroll_speed_count += 1
+            for rock in self.rocks:
+                if rock.update(self.rabbit, self.scroll_speed):
+                    self.scroll_speed_count = 0
+            if random() < 0.03 * self.scroll_speed:
+                self.carrots.append(Carrot())
+            if random() < 0.01 * self.scroll_speed:
+                self.rocks.append(Rock())
+            self.carrots = [carrot for carrot in self.carrots if carrot.alive]
+            self.rocks = [rock for rock in self.rocks if rock.alive]
+            if self.progress > self.GOAL:
+                self.state = 'clear'
+                self.rabbit.move_center()
+        elif self.state == 'clear':
+            pass
 
     def draw(self):
         pyxel.cls(0)
-        self.road.draw()
-        for carrot in self.carrots:
-            carrot.draw()
-        for rock in self.rocks:
-            rock.draw()
-        self.rabbit.draw()
-        self.progress_bar.draw(self.progress / self.GOAL)
+        if self.state == 'play':
+            self.road.draw()
+            for carrot in self.carrots:
+                carrot.draw()
+            for rock in self.rocks:
+                rock.draw()
+            self.rabbit.draw()
+            self.progress_bar.draw(self.progress / self.GOAL)
+        elif self.state == 'clear':
+            self.road.draw()
+            self.clear_screen.draw()
+            self.rabbit.draw()
 
 
 class Rabbit:
@@ -103,6 +116,10 @@ class Rabbit:
         if self.state == 'run':
             self.state = 'hit'
             self.state_count_time = self.HIT_ANIMATION_TIME
+
+    def move_center(self):
+        self.x = WINDOW_WIDTH // 2 - self.RUN_W // 2
+        self.y = WINDOW_HEIGHT // 2 - self.RUN_H // 2
 
     def draw(self):
         if self.state == 'run':
@@ -227,5 +244,18 @@ class ProgressBar:
         pyxel.blt(self.X, self.Y, 0, self.U, self.V, self.W, self.H, 2)
         length = int(self.BAR_WIDTH * progress_percent)
         pyxel.rect(self.X + self.BAR_U, self.Y + self.BAR_V, length, self.BAR_HEIGHT, self.BAR_COLOR)
+
+
+class ClearScreen:
+    U = 0
+    V = 176
+    W = 128
+    H = 48
+
+    X = (WINDOW_HEIGHT - W) // 2
+    Y = WINDOW_HEIGHT // 4 - H // 2
+
+    def draw(self):
+        pyxel.blt(self.X, self.Y, 0, self.U, self.V, self.W, self.H, 2)
 
 App()
