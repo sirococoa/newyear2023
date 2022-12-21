@@ -35,6 +35,7 @@ class App:
         self.progress_bar = ProgressBar()
         self.start_screen = StartScreen()
         self.clear_screen = ClearScreen()
+        self.button = Button()
         self.scroll_speed = self.INIT_SCROLL_SPEED
         self.scroll_speed_count = 0
         self.progress = 0
@@ -46,9 +47,10 @@ class App:
         pyxel.run(self.update, self.draw)
 
     def update(self):
+        self.button.update()
         if self.state == 'start':
             self.rabbit.move_center()
-            if self.start_screen.update(self.how_to_play):
+            if self.start_screen.update(self.button.get_input(), self.how_to_play):
                 self.state = 'play'
                 self.start_time = datetime.now()
                 self.how_to_play.change_message('run')
@@ -56,7 +58,7 @@ class App:
         elif self.state == 'play':
             self.scroll_speed = min(self.INIT_SCROLL_SPEED + self.scroll_speed_count // self.SCROLL_SPEED_RATE, self.MAX_SCROLL_SPEED)
             self.progress += self.scroll_speed
-            self.rabbit.update()
+            self.rabbit.update(self.button.get_input())
             self.road.update(self.scroll_speed)
             for carrot in self.carrots:
                 if carrot.update(self.rabbit, self.scroll_speed):
@@ -77,7 +79,7 @@ class App:
                 self.rabbit.move_center()
         elif self.state == 'clear':
             self.effects.append(Effect.create_random())
-            if pyxel.btn(pyxel.KEY_B):
+            if pyxel.btn(pyxel.KEY_B) or self.button.get_input() == Button.INPUT_DECIDE:
                 self.state = 'start'
                 self.how_to_play.change_message('start')
                 self.init_game()
@@ -121,6 +123,7 @@ class App:
             self.rabbit.draw()
             self.time_display.draw()
         self.how_to_play.draw()
+        self.button.draw()
         for effect in self.effects:
             effect.draw()
 
@@ -150,13 +153,13 @@ class Rabbit:
         self.state_count_time = 0
         self.move_count_time = 0
 
-    def update(self):
+    def update(self, button_input):
         if self.move_count_time == 0:
             key_input = 0
-            if pyxel.btn(pyxel.KEY_W):
+            if pyxel.btn(pyxel.KEY_W) or button_input == Button.INPUT_UP:
                 pyxel.play(0, 1)
                 key_input -= 1
-            if pyxel.btn(pyxel.KEY_S):
+            if pyxel.btn(pyxel.KEY_S) or button_input == Button.INPUT_DOWN:
                 pyxel.play(0, 2)
                 key_input += 1
             self.lane += key_input
@@ -339,13 +342,19 @@ class StartScreen:
     # NEWYEAR_TIME = datetime.now() + timedelta(minutes=1)
     print(NEWYEAR_TIME)
 
+    INPUT_DELAY = 5
+
     def __init__(self):
+        self.input_delay_time = self.INPUT_DELAY
         self.selection = 0
         self.state = 'start'
 
-    def update(self, how_to_play):
+    def update(self, button_input, how_to_play):
+        if self.input_delay_time > 0:
+            self.input_delay_time -= 1
         if self.state == 'start':
-            if pyxel.btn(pyxel.KEY_SPACE):
+            if pyxel.btn(pyxel.KEY_SPACE) or (self.input_delay_time == 0 and button_input == Button.INPUT_DECIDE):
+                self.input_delay_time = self.INPUT_DELAY
                 if self.selection == 0:
                     return True
                 else:
@@ -353,14 +362,17 @@ class StartScreen:
                     how_to_play.change_message('clear')
                     return False
             key_input = 0
-            if pyxel.btnr(pyxel.KEY_W):
+            if pyxel.btnr(pyxel.KEY_W) or (self.input_delay_time == 0 and button_input == Button.INPUT_UP):
+                self.input_delay_time = self.INPUT_DELAY
                 key_input -= 1
-            if pyxel.btnr(pyxel.KEY_S):
+            if pyxel.btnr(pyxel.KEY_S) or (self.input_delay_time == 0 and button_input == Button.INPUT_DOWN):
+                self.input_delay_time = self.INPUT_DELAY
                 key_input += 1
             self.selection += key_input
             self.selection = self.selection % 2
         elif self.state == 'wait':
-            if pyxel.btn(pyxel.KEY_B):
+            if pyxel.btn(pyxel.KEY_B) or (self.input_delay_time == 0 and button_input == Button.INPUT_DECIDE):
+                self.input_delay_time = self.INPUT_DELAY
                 how_to_play.change_message('start')
                 self.state = 'start'
             if self.NEWYEAR_TIME <= datetime.now():
@@ -505,6 +517,69 @@ class Effect:
         if color is None:
             color = choice([1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15])
         return Effect(shape, time, x, y, vx, vy, size, color)
+
+
+class Button:
+    WIDTH = 50
+    HEIGHT = 40
+
+    UP_X = WINDOW_WIDTH // 4
+    UP_Y = WINDOW_HEIGHT // 4 * 3
+
+    DOWN_X = WINDOW_WIDTH // 4
+    DOWN_Y = WINDOW_HEIGHT // 4 * 3 + HEIGHT + 10
+
+    RADIUS = 25
+
+    DECIDE_X = WINDOW_WIDTH // 4 * 3
+    DECIDE_Y = UP_Y + 5
+
+    INPUT_NONE = 0
+    INPUT_UP = 1
+    INPUT_DOWN = 2
+    INPUT_DECIDE = 3
+
+    COLOR = 7
+
+    def __init__(self):
+        self.enable = False
+        pyxel.mouse(True)
+        self.input = self.INPUT_NONE
+
+    def update(self):
+        self.input = self.INPUT_NONE
+        if pyxel.btn(pyxel.MOUSE_BUTTON_LEFT):
+            self.enable = True
+            cx = pyxel.mouse_x
+            cy = pyxel.mouse_y
+
+            if abs(self.UP_X - cx) <= self.WIDTH // 2 and 0 <= self.UP_Y - cy <= self.HEIGHT:
+                self.input = self.INPUT_UP
+            if abs(self.DOWN_X - cx) <= self.WIDTH // 2 and 0 <= self.DOWN_Y - cy <= self.HEIGHT:
+                self.input = self.INPUT_DOWN
+            if (self.DECIDE_X - cx) ** 2 + (self.DECIDE_Y - cy) ** 2 < self.RADIUS ** 2:
+                self.input = self.INPUT_DECIDE
+
+    def get_input(self):
+        return self.input
+
+    def draw(self):
+        if self.enable:
+            x1 = self.UP_X
+            y1 = self.UP_Y - self.HEIGHT
+            x2 = self.UP_X - self.WIDTH // 2
+            y2 = self.UP_Y
+            x3 = self.UP_X + self.WIDTH // 2
+            y3 = self.UP_Y
+            pyxel.trib(x1, y1, x2, y2, x3, y3, self.COLOR)
+            x1 = self.DOWN_X
+            y1 = self.DOWN_Y
+            x2 = self.DOWN_X - self.WIDTH // 2
+            y2 = self.DOWN_Y - self.HEIGHT
+            x3 = self.DOWN_X + self.WIDTH // 2
+            y3 = self.DOWN_Y - self.HEIGHT
+            pyxel.trib(x1, y1, x2, y2, x3, y3, self.COLOR)
+            pyxel.circb(self.DECIDE_X, self.DECIDE_Y, self.RADIUS, self.COLOR)
 
 
 App()
