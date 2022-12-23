@@ -365,7 +365,7 @@ class StartScreen:
 
     def update(self, button_input, how_to_play):
         if self.state == 'start':
-            if pyxel.btn(pyxel.KEY_SPACE) or button_input[0] == Button.INPUT_DECIDE:
+            if pyxel.btn(pyxel.KEY_SPACE) or button_input == (Button.INPUT_DECIDE, Button.INPUT_RELEASE):
                 if self.selection == 0:
                     return True
                 else:
@@ -380,7 +380,7 @@ class StartScreen:
             self.selection += key_input
             self.selection = self.selection % 2
         elif self.state == 'wait':
-            if pyxel.btn(pyxel.KEY_B) or button_input == (Button.INPUT_DECIDE, Button.INPUT_PUSH):
+            if pyxel.btn(pyxel.KEY_B) or button_input == (Button.INPUT_DECIDE, Button.INPUT_RELEASE):
                 how_to_play.change_message('start')
                 self.state = 'start'
             if self.NEWYEAR_TIME <= datetime.now():
@@ -419,7 +419,6 @@ class TimeDisplay:
         else:
             self.time = str(time.days) + self.time[self.time.find(','):self.time.find('.')]
 
-        # print(len(self.time), self.time, time)
         self.x = WINDOW_WIDTH // 2 - len(self.time)*self.W // 2
         self.y = WINDOW_HEIGHT // 4 * 3 - self.H // 2
 
@@ -578,12 +577,11 @@ class Button:
         if self.before_input == self.input:
             return self.input, self.INPUT_KEEP
         if self.before_input == self.INPUT_NONE:
-            if self.INPUT_NONE == self.INPUT_NONE:
+            if self.input == self.INPUT_NONE:
                 return self.input, self.INPUT_KEEP
             else:
                 return self.input, self.INPUT_PUSH
-        return self.input, self.INPUT_RELEASE
-
+        return self.before_input, self.INPUT_RELEASE
 
     def draw(self):
         if self.enable:
@@ -623,7 +621,6 @@ class UraCommand:
             self.key_history.append(2)
         if len(self.key_history) > len(self.COMMAND):
             self.key_history.pop(0)
-        print(self.key_history)
         if self.key_history == self.COMMAND:
             return True
         return False
