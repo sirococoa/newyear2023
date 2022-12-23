@@ -160,7 +160,7 @@ class Rabbit:
     HIT_H = 32
 
     HIT_ANIMATION_TIME = 20
-    MOVE_ANIMATION_TIME = 2
+    MOVE_ANIMATION_TIME = 3
 
     def __init__(self):
         self.x = self.INIT_START_X
